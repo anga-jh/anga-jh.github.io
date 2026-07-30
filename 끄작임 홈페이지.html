@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>끄작임 — 구독 안내</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;600&family=Noto+Sans+KR:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --ink: #1a1a1a;
+    --ink-2: #444;
+    --ink-3: #888;
+    --paper: #f9f7f4;
+    --paper-2: #ffffff;
+    --rule: #e2ddd8;
+    --accent: #2d5a3d;
+    --accent-light: #e8f0ea;
+    --accent-mid: #4a7c5f;
+    --gold: #b8860b;
+    --gold-light: #faf6e8;
+  }
+
+  body {
+    font-family: 'Noto Sans KR', sans-serif;
+    background: var(--paper);
+    color: var(--ink);
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .site-header {
+    border-bottom: 1px solid var(--rule);
+    padding: 28px 40px;
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    background: var(--paper);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  .logo {
+    font-family: 'Noto Serif KR', serif;
+    font-size: 22px;
+    font-weight: 600;
+    letter-spacing: -0.5px;
+    color: var(--ink);
+  }
+  .logo-sub {
+    font-size: 12px;
+    color: var(--ink-3);
+    letter-spacing: 0.5px;
+  }
+
+  .hero {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 80px 40px 64px;
+    border-bottom: 1px solid var(--rule);
+  }
+  .hero-eyebrow {
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--accent-mid);
+    margin-bottom: 20px;
+    font-weight: 500;
+  }
+  .hero-title {
+    font-family: 'Noto Serif KR', serif;
+    font-size: clamp(30px, 5vw, 46px);
+    font-weight: 600;
+    line-height: 1.3;
+    letter-spacing: -1px;
+    color: var(--ink);
+    margin-bottom: 28px;
+  }
+  .hero-title em {
+    font-style: normal;
+    color: var(--accent);
+  }
+  .hero-desc {
+    font-size: 15px;
+    line-height: 1.9;
+    color: var(--ink-2);
+    max-width: 560px;
+    font-weight: 300;
+  }
+  .hero-desc + .hero-desc {
+    margin-top: 16px;
+  }
+
+  /* Philosophy strip */
+  .philosophy {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 56px 40px;
+    border-bottom: 1px solid var(--rule);
+  }
+  .philosophy-quote {
+    font-family: 'Noto Serif KR', serif;
+    font-size: clamp(18px, 3vw, 24px);
+    font-weight: 400;
+    line-height: 1.75;
+    color: var(--accent);
+    letter-spacing: -0.3px;
+    padding-left: 24px;
+    border-left: 2px solid var(--accent);
+    margin-bottom: 20px;
+  }
+  .philosophy-body {
+    font-size: 14px;
+    line-height: 1.85;
+    color: var(--ink-3);
+    font-weight: 300;
+    max-width: 520px;
+    padding-left: 24px;
+  }
+
+  /* Stats */
+  .stats-row {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 0 40px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    border-bottom: 1px solid var(--rule);
+  }
+  .stat-item {
+    padding: 32px 0;
+  }
+  .stat-item + .stat-item {
+    border-left: 1px solid var(--rule);
+    padding-left: 32px;
+  }
+  .stat-num {
+    font-family: 'Noto Serif KR', serif;
+    font-size: 30px;
+    font-weight: 600;
+    color: var(--accent);
+    letter-spacing: -1px;
+    margin-bottom: 4px;
+  }
+  .stat-label {
+    font-size: 11px;
+    color: var(--ink-3);
+    font-weight: 400;
+    letter-spacing: 0.3px;
+  }
+
+  /* Plans */
+  .plans-section {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 64px 40px 80px;
+  }
+  .section-label {
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    margin-bottom: 36px;
+    font-weight: 500;
+  }
+
+  .plan-row {
+    border-top: 1px solid var(--rule);
+    padding: 32px 0;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: start;
+    gap: 24px;
+  }
+  .plan-row:last-child {
+    border-bottom: 1px solid var(--rule);
+  }
+  .plan-row.featured {
+    background: var(--accent-light);
+    margin: 0 -20px;
+    padding: 32px 20px;
+    border-radius: 4px;
+    border-color: transparent;
+    position: relative;
+  }
+  .plan-row.featured::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: var(--accent);
+    border-radius: 4px 0 0 4px;
+  }
+  .plan-badge {
+    display: inline-block;
+    font-size: 10px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    background: var(--accent);
+    color: #fff;
+    padding: 3px 10px;
+    border-radius: 2px;
+    margin-bottom: 10px;
+    font-weight: 500;
+  }
+  .plan-name {
+    font-family: 'Noto Serif KR', serif;
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--ink);
+    margin-bottom: 8px;
+    letter-spacing: -0.3px;
+  }
+  .plan-desc {
+    font-size: 13px;
+    line-height: 1.75;
+    color: var(--ink-3);
+    font-weight: 300;
+    margin-bottom: 14px;
+  }
+  .plan-includes {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+  .plan-includes span {
+    font-size: 12px;
+    color: var(--ink-2);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .plan-includes span::before {
+    content: '';
+    width: 14px;
+    height: 1px;
+    background: var(--accent-mid);
+    flex-shrink: 0;
+    display: inline-block;
+  }
+  .plan-right {
+    text-align: right;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 12px;
+  }
+  .plan-price {
+    font-size: 26px;
+    font-weight: 500;
+    color: var(--ink);
+    letter-spacing: -1px;
+    white-space: nowrap;
+  }
+  .plan-price-unit {
+    font-size: 12px;
+    color: var(--ink-3);
+    font-weight: 300;
+  }
+  .plan-price sup {
+    font-size: 13px;
+    vertical-align: top;
+    margin-top: 6px;
+    font-weight: 400;
+  }
+  .plan-cta {
+    display: inline-block;
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+    padding: 9px 20px;
+    border-radius: 2px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background 0.15s;
+    white-space: nowrap;
+    font-family: 'Noto Sans KR', sans-serif;
+  }
+  .plan-cta.secondary {
+    border: 1px solid var(--ink);
+    background: transparent;
+    color: var(--ink);
+  }
+  .plan-cta.secondary:hover {
+    background: var(--ink);
+    color: var(--paper);
+  }
+  .plan-cta.primary {
+    background: var(--accent);
+    color: #fff;
+    border: 1px solid var(--accent);
+  }
+  .plan-cta.primary:hover {
+    background: #1e3f2b;
+  }
+  .saving-badge {
+    font-size: 10px;
+    color: var(--gold);
+    background: var(--gold-light);
+    border: 1px solid #d4b96a;
+    padding: 3px 8px;
+    border-radius: 2px;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+  }
+
+  /* Closing philosophy */
+  .closing {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 56px 40px;
+    border-top: 1px solid var(--rule);
+    border-bottom: 1px solid var(--rule);
+    text-align: center;
+  }
+  .closing-text {
+    font-family: 'Noto Serif KR', serif;
+    font-size: clamp(15px, 2.5vw, 18px);
+    font-weight: 400;
+    line-height: 2;
+    color: var(--ink-2);
+    letter-spacing: -0.2px;
+  }
+  .closing-text strong {
+    color: var(--ink);
+    font-weight: 600;
+  }
+  .closing-sig {
+    margin-top: 28px;
+    font-size: 12px;
+    color: var(--ink-3);
+    font-weight: 300;
+    letter-spacing: 0.5px;
+  }
+
+  /* Footer */
+  .footer-note {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 36px 40px 64px;
+  }
+  .footer-note p {
+    font-size: 12px;
+    color: var(--ink-3);
+    line-height: 1.8;
+    font-weight: 300;
+  }
+  .footer-note p + p { margin-top: 6px; }
+  .footer-note strong { color: var(--ink-2); font-weight: 500; }
+
+  @media (max-width: 600px) {
+    .site-header { padding: 20px 24px; }
+    .hero, .philosophy, .plans-section, .footer-note, .closing { padding-left: 24px; padding-right: 24px; }
+    .stats-row { padding: 0 24px; grid-template-columns: 1fr; }
+    .stat-item + .stat-item { border-left: none; border-top: 1px solid var(--rule); padding-left: 0; padding-top: 24px; }
+    .plan-row { grid-template-columns: 1fr; }
+    .plan-row.featured { margin: 0 -12px; padding: 28px 12px; }
+    .plan-right { align-items: flex-start; }
+  }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <span class="logo">끄작임</span>
+  <span class="logo-sub">생각의 끄작임</span>
+</header>
+
+<section class="hero">
+  <p class="hero-eyebrow">매일 아침, 시장을 여는 생각</p>
+  <h1 class="hero-title">많은 정보 속에서<br><em>나만의 행복을 찾는 법</em></h1>
+  <p class="hero-desc">
+    시장은 매일 쏟아지는 뉴스와 숫자로 사람을 지치게 만듭니다.
+    정작 중요한 건 무엇을 골라낼 것인가, 그리고 그 판단이 내 삶을 얼마나 자유롭게 하느냐입니다.
+  </p>
+  <p class="hero-desc">
+    15년 넘게 전업투자자로 살아온 시각으로, 매일 아침 핵심만 골라 카카오톡으로 전달합니다.
+    좋은 판단이 쌓이면, 시장 앞에서 흔들리지 않는 나를 만날 수 있습니다.
+  </p>
+</section>
+
+<section class="philosophy">
+  <div class="philosophy-quote">
+    투자는 결국 자기 자신과의 대화입니다.<br>
+    남의 소음이 아닌, 나의 기준으로 시장을 읽을 때<br>
+    비로소 끄작임이 시작됩니다.
+  </div>
+  <p class="philosophy-body">
+    끄작임(끄적임의 방언)은 거창한 분석이 아닙니다. 투자자가 시장을 마주하며 매일 아침 쌓아온
+    작은 생각들의 흔적입니다. 그 흔적이 때로는 방향이 되고, 때로는 위로가 됩니다.
+  </p>
+</section>
+
+<div class="stats-row">
+  <div class="stat-item">
+    <div class="stat-num">15+</div>
+    <div class="stat-label">전업투자 경력</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-num">매일</div>
+    <div class="stat-label">아침 카카오톡 발송</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-num">365일</div>
+    <div class="stat-label">시장과 함께하는 하루</div>
+  </div>
+</div>
+
+<section class="plans-section">
+  <p class="section-label">구독 플랜</p>
+
+  <div class="plan-row">
+    <div class="plan-left">
+      <div class="plan-name">끄작임</div>
+      <div class="plan-desc">
+        거시 흐름과 수급, 오늘 시장에서 눈여겨볼 화두를 정리합니다.<br>
+        복잡한 하루를 조금 더 단순하게 시작하고 싶은 분들을 위한 플랜.
+      </div>
+      <div class="plan-includes">
+        <span>매일 아침 모닝 코멘터리</span>
+        <span>거시·수급·이슈 핵심 요약</span>
+        <span>카카오톡 직접 발송</span>
+      </div>
+    </div>
+    <div class="plan-right">
+      <div>
+        <div class="plan-price"><sup>₩</sup>150,000</div>
+        <div class="plan-price-unit">/ 월</div>
+      </div>
+      <a href="#" class="plan-cta secondary">구독하기</a>
+    </div>
+  </div>
+
+  <div class="plan-row featured">
+    <div class="plan-left">
+      <div class="plan-badge">추천</div>
+      <div class="plan-name">끄작임 종목세상</div>
+      <div class="plan-desc">
+        모닝 코멘터리에 종목 이야기를 더한 플랜.<br>
+        어떤 종목이 움직이는지, 왜 움직이는지 — 투자자의 언어로 풀어드립니다.
+      </div>
+      <div class="plan-includes">
+        <span>매일 아침 모닝 코멘터리</span>
+        <span>종목별 흐름·수급·이슈 코멘트</span>
+        <span>비상장·선제 이슈 종목 언급</span>
+        <span>카카오톡 직접 발송</span>
+      </div>
+    </div>
+    <div class="plan-right">
+      <div>
+        <div class="plan-price"><sup>₩</sup>300,000</div>
+        <div class="plan-price-unit">/ 월</div>
+      </div>
+      <a href="#" class="plan-cta primary">구독하기</a>
+    </div>
+  </div>
+
+  <div class="plan-row">
+    <div class="plan-left">
+      <div class="plan-name">끄작임 + 종목세상 패키지</div>
+      <div class="plan-desc">
+        두 서비스를 온전히 하나로. 더 넓게, 더 깊게 — 개별 대비 50,000원 절약.
+      </div>
+      <div class="plan-includes">
+        <span>끄작임 + 종목세상 전체 포함</span>
+        <span>개별 구독 대비 50,000원 절약</span>
+        <span>카카오톡 직접 발송</span>
+      </div>
+    </div>
+    <div class="plan-right">
+      <div>
+        <div class="plan-price"><sup>₩</sup>400,000</div>
+        <div class="plan-price-unit">/ 월</div>
+      </div>
+      <span class="saving-badge">5만원 절약</span>
+      <a href="#" class="plan-cta secondary">구독하기</a>
+    </div>
+  </div>
+</section>
+
+<section class="closing">
+  <p class="closing-text">
+    정보가 많을수록 오히려 길을 잃기 쉽습니다.<br>
+    끄작임은 <strong>덜어내는 것</strong>에서 시작합니다.<br>
+    매일 아침, 당신이 스스로 판단할 수 있도록 — 그 옆에 있겠습니다.
+  </p>
+  <p class="closing-sig">— 끄작임, 생각의 끄작임</p>
+</section>
+
+<section class="footer-note">
+  <p><strong>결제 안내</strong> — 카드 자동결제 방식으로 운영됩니다. 최초 1회 카드 등록 후 매월 동일 일자에 자동 청구됩니다.</p>
+  <p>구독 해지는 언제든 가능하며, 해지 요청 시 다음 결제일부터 청구되지 않습니다.</p>
+  <p>문의 및 구독 신청은 카카오톡으로 연락주세요.</p>
+</section>
+
+</body>
+</html>
