@@ -138,6 +138,16 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--paper);color:var(--i
 .plan-tag-package{background:#e8f4fd;color:#2471a3}
 .today-badge{display:inline-block;background:var(--green);color:#fff;font-size:10px;padding:2px 8px;border-radius:2px;margin-left:8px;font-weight:500;vertical-align:middle}
 
+/* ── TODAY SECTION ── */
+.today-section{margin-bottom:36px;border:1px solid var(--green);border-radius:4px;overflow:hidden}
+.today-section-header{background:var(--green);padding:14px 20px;display:flex;align-items:center;justify-content:space-between}
+.today-section-label{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,.7);font-weight:500}
+.today-section-date{font-size:12px;color:rgba(255,255,255,.8);font-weight:300}
+.today-section-body{padding:24px 20px;background:var(--white)}
+.today-content{font-size:15px;line-height:2;color:var(--ink);font-weight:300;white-space:pre-wrap}
+.today-empty{font-size:13px;color:var(--ink-3);font-weight:300;font-style:italic}
+.archive-label{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink-3);font-weight:500;margin-bottom:16px;margin-top:36px;padding-bottom:10px;border-bottom:1px solid var(--rule)}
+
 /* ── ADMIN ── */
 .admin-wrap{max-width:760px;margin:0 auto;padding:48px 40px 80px}
 .admin-title{font-family:'Noto Serif KR',serif;font-size:22px;font-weight:600;color:var(--ink);margin-bottom:4px}
@@ -236,7 +246,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--paper);color:var(--i
     <div class="plan-row featured">
       <div>
         <div class="plan-badge">추천</div>
-        <div class="plan-name">끄작임 종목세상</div>
+        <div class="plan-name">끄작임 디테일</div>
         <div class="plan-desc">모닝 코멘터리에 종목 이야기를 더한 플랜.<br>어떤 종목이 움직이는지, 왜 움직이는지 — 투자자의 언어로 풀어드립니다.</div>
         <div class="plan-includes">
           <span>매일 아침 모닝 코멘터리</span>
@@ -253,10 +263,10 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--paper);color:var(--i
 
     <div class="plan-row">
       <div>
-        <div class="plan-name">끄작임 + 종목세상 패키지</div>
+        <div class="plan-name">끄작임 + 끄작임 디테일 패키지</div>
         <div class="plan-desc">두 서비스를 온전히 하나로. 더 넓게, 더 깊게 — 개별 대비 50,000원 절약.</div>
         <div class="plan-includes">
-          <span>끄작임 + 종목세상 전체 포함</span>
+          <span>끄작임 + 끄작임 디테일 전체 포함</span>
           <span>개별 구독 대비 50,000원 절약</span>
           <span>카카오톡 직접 발송</span>
         </div>
@@ -309,8 +319,8 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--paper);color:var(--i
       <select class="plan-select" id="signupPlan" onchange="updatePlanInfo()">
         <option value="">플랜을 선택하세요</option>
         <option value="kkjagim">끄작임 — 월 150,000원</option>
-        <option value="jongmok">끄작임 종목세상 — 월 300,000원</option>
-        <option value="package">끄작임 + 종목세상 패키지 — 월 400,000원</option>
+        <option value="jongmok">끄작임 디테일 — 월 300,000원</option>
+        <option value="package">끄작임 + 끄작임 디테일 패키지 — 월 400,000원</option>
       </select>
       <div class="plan-info-box" id="planInfoBox"></div>
     </div>
@@ -351,19 +361,33 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--paper);color:var(--i
       <span class="member-name-tag" id="memberNameTag"></span>
     </div>
 
+    <!-- 매일의 끄작임: 오늘 글 상단 표시 -->
+    <div id="todaySectionWrap" style="display:none">
+      <div class="today-section">
+        <div class="today-section-header">
+          <span class="today-section-label">매일의 끄작임</span>
+          <span class="today-section-date" id="todayDateLabel"></span>
+        </div>
+        <div class="today-section-body">
+          <div id="todayContent" class="today-content"></div>
+        </div>
+      </div>
+    </div>
+
     <div class="tab-row">
       <div class="tab active" id="tab-kkjagim" onclick="switchTab('kkjagim')">끄작임</div>
-      <div class="tab" id="tab-jongmok" onclick="switchTabJongmok()">종목세상</div>
+      <div class="tab" id="tab-jongmok" onclick="switchTabJongmok()">끄작임 디테일</div>
     </div>
 
     <div id="content-kkjagim">
+      <div class="archive-label" id="archiveLabel" style="display:none">지난 끄작임</div>
       <div class="loading" id="loadingKkjagim"><div class="spinner"></div>불러오는 중...</div>
       <div id="postsKkjagim"></div>
     </div>
 
     <div id="content-jongmok" style="display:none">
       <div id="jongmokLocked" class="locked-notice" style="display:none">
-        <strong>종목세상</strong>은 종목세상 또는 패키지 구독자만 열람 가능합니다.<br>
+        <strong>끄작임 디테일</strong>은 끄작임 디테일 또는 패키지 구독자만 열람 가능합니다.<br>
         플랜 업그레이드는 카카오톡으로 문의해 주세요.
       </div>
       <div class="loading" id="loadingJongmok" style="display:none"><div class="spinner"></div>불러오는 중...</div>
@@ -382,7 +406,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--paper);color:var(--i
       <div class="admin-section-title">오늘의 글 올리기</div>
       <div class="radio-group">
         <label class="radio-item"><input type="radio" name="postType" value="kkjagim" checked> 끄작임</label>
-        <label class="radio-item"><input type="radio" name="postType" value="jongmok"> 종목세상</label>
+        <label class="radio-item"><input type="radio" name="postType" value="jongmok"> 끄작임 디테일</label>
       </div>
       <div class="form-group">
         <label class="form-label">내용</label>
@@ -417,12 +441,12 @@ let currentTab = 'kkjagim';
 // ── PLAN INFO
 const planInfo = {
   kkjagim: '매일 아침 모닝 코멘터리 + 거시·수급·이슈 핵심 요약 | 월 150,000원',
-  jongmok: '끄작임 + 종목별 흐름·수급 코멘트 + 비상장 종목 언급 | 월 300,000원',
-  package: '끄작임 + 종목세상 전체 포함 | 월 400,000원 (개별 대비 5만원 절약)',
+  jongmok: '끄작임 디테일 + 종목별 흐름·수급 코멘트 + 비상장 종목 언급 | 월 300,000원',
+  package: '끄작임 + 끄작임 디테일 전체 포함 | 월 400,000원 (개별 대비 5만원 절약)',
 };
 const planNames = {
   kkjagim: '끄작임',
-  jongmok: '종목세상',
+  jongmok: '끄작임 디테일',
   package: '패키지',
 };
 const planTagClass = {
@@ -582,7 +606,7 @@ function renderPosts(posts, containerId, type) {
           ${isToday(p.published_date || p.created_at) ? '<span class="today-badge">오늘</span>' : ''}
         </span>
         <span class="post-card-tag ${type === 'kkjagim' ? 'tag-kkjagim' : 'tag-jongmok'}">
-          ${type === 'kkjagim' ? '끄작임' : '종목세상'}
+          ${type === 'kkjagim' ? '끄작임' : '끄작임 디테일'}
         </span>
       </div>
       <div class="post-card-body">
@@ -597,23 +621,49 @@ async function loadPosts() {
   const canSeeKkjagim = currentProfile.active && ['kkjagim', 'jongmok', 'package'].includes(currentProfile.plan);
   const canSeeJongmok = currentProfile.active && ['jongmok', 'package'].includes(currentProfile.plan);
 
-  // 끄작임 posts
   document.getElementById('loadingKkjagim').style.display = 'block';
   document.getElementById('postsKkjagim').innerHTML = '';
+
   if (canSeeKkjagim) {
     const { data } = await db.from('posts').select('*').eq('type', 'kkjagim').order('published_date', { ascending: false }).limit(30);
     document.getElementById('loadingKkjagim').style.display = 'none';
-    renderPosts(data, 'postsKkjagim', 'kkjagim');
+
+    const today = new Date().toISOString().slice(0, 10);
+    const todayPost = data && data.find(p => (p.published_date || p.created_at || '').slice(0, 10) === today);
+    const pastPosts = data ? data.filter(p => (p.published_date || p.created_at || '').slice(0, 10) !== today) : [];
+
+    // 오늘의 끄작임 표시
+    const todayWrap = document.getElementById('todaySectionWrap');
+    if (todayPost) {
+      todayWrap.style.display = 'block';
+      document.getElementById('todayDateLabel').textContent = formatDate(todayPost.published_date || todayPost.created_at);
+      document.getElementById('todayContent').textContent = todayPost.content;
+    } else {
+      todayWrap.style.display = 'block';
+      document.getElementById('todayDateLabel').textContent = formatDate(today);
+      document.getElementById('todayContent').innerHTML = '<span class="today-empty">오늘의 끄작임은 아직 등록되지 않았습니다.</span>';
+    }
+
+    // 지난 글 아카이브
+    const archiveLabel = document.getElementById('archiveLabel');
+    if (pastPosts.length > 0) {
+      archiveLabel.style.display = 'block';
+      renderPosts(pastPosts, 'postsKkjagim', 'kkjagim');
+    } else {
+      archiveLabel.style.display = 'none';
+      document.getElementById('postsKkjagim').innerHTML = '';
+    }
   } else {
     document.getElementById('loadingKkjagim').style.display = 'none';
+    document.getElementById('todaySectionWrap').style.display = 'none';
     document.getElementById('postsKkjagim').innerHTML = '<div class="locked-notice">구독 승인 후 열람 가능합니다. 관리자 확인 중입니다.</div>';
   }
 
-  // 종목세상 tab
+  // 끄작임 디테일 탭
   const jongmokTab = document.getElementById('tab-jongmok');
   if (!canSeeJongmok) {
     jongmokTab.classList.add('locked');
-    jongmokTab.title = '종목세상 구독자만 열람 가능합니다';
+    jongmokTab.title = '끄작임 디테일 구독자만 열람 가능합니다';
   } else {
     jongmokTab.classList.remove('locked');
   }
