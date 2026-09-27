@@ -187,6 +187,14 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--paper);color:var(--i
   .logo-sub{display:none}
   .content-header{flex-direction:column;gap:6px}
 }
+.post-fold{margin-bottom:8px}
+.post-fold>summary{list-style:none;cursor:pointer;border-bottom:none;gap:10px}
+.post-fold>summary::-webkit-details-marker{display:none}
+.post-fold>summary .post-card-date{flex:1}
+.post-fold>summary:hover{background:var(--green-light)}
+.post-fold[open]>summary{border-bottom:1px solid var(--rule)}
+.fold-arrow{color:var(--ink-3);font-size:12px;transition:transform .15s}
+.post-fold[open] .fold-arrow{transform:rotate(180deg)}
 </style>
 </head>
 <body>
@@ -418,7 +426,13 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--paper);color:var(--i
       </div>
       <div class="form-error" id="postError"></div>
       <div class="form-success" id="postSuccess"></div>
-      <button class="btn btn-primary" onclick="handlePost()">올리기</button>
+      <button class="btn btn-primary" id="postBtn" onclick="handlePost()">올리기</button>
+      <button class="btn btn-ghost" id="cancelEditBtn" style="display:none;margin-left:8px" onclick="cancelEdit()">수정 취소</button>
+    </div>
+
+    <div class="admin-section">
+      <div class="admin-section-title">올린 글 관리 (수정 / 삭제)</div>
+      <div id="adminPostList"><div class="loading"><div class="spinner"></div>불러오는 중...</div></div>
     </div>
 
     <div class="admin-section">
@@ -517,7 +531,7 @@ async function handleSignup() {
     return;
   }
 
-  const { data, error } = await db.auth.signUp({ email, password });
+  const { data, error } = await db.auth.signUp({ email, password, options: { data: { name, phone, plan } } });
   if (error) {
     err.textContent = error.message === 'User already registered' ? '이미 가입된 이메일입니다.' : error.message;
     err.classList.add('show');
@@ -525,10 +539,7 @@ async function handleSignup() {
   }
 
   // 프로필 저장
-  await db.from('profiles').insert({
-    id: data.user.id,
-    name, phone, plan, active: false
-  });
+  // 프로필은 Supabase 트리거(handle_new_user)가 자동 생성
 
   suc.textContent = '신청이 완료되었습니다. 관리자 확인 후 구독이 시작됩니다.';
   suc.classList.add('show');
@@ -602,9 +613,9 @@ function renderPosts(posts, containerId, type) {
     container.innerHTML = '<div class="post-empty">아직 등록된 글이 없습니다.</div>';
     return;
   }
-  container.innerHTML = posts.map(p => `
-    <div class="post-card">
-      <div class="post-card-header">
+  container.innerHTML = posts.map((p, i) => `
+    <details class="post-card post-fold"${type === 'jongmok' && i === 0 && isToday(p.published_date || p.created_at) ? ' open' : ''}>
+      <summary class="post-card-header">
         <span class="post-card-date">
           ${formatDate(p.published_date || p.created_at)}
           ${isToday(p.published_date || p.created_at) ? '<span class="today-badge">오늘</span>' : ''}
@@ -612,11 +623,12 @@ function renderPosts(posts, containerId, type) {
         <span class="post-card-tag ${type === 'kkjagim' ? 'tag-kkjagim' : 'tag-jongmok'}">
           ${type === 'kkjagim' ? '끄작임' : '끄작임 디테일'}
         </span>
-      </div>
+        <span class="fold-arrow">▾</span>
+      </summary>
       <div class="post-card-body">
         <div class="post-card-content">${p.content}</div>
       </div>
-    </div>
+    </details>
   `).join('');
 }
 
@@ -718,20 +730,83 @@ async function handlePost() {
   const today = new Date().toISOString().slice(0, 10);
   const dateInput = document.getElementById('adminDate').value;
   const published_date = dateInput || today;
-  const { error } = await db.from('posts').insert({ type, content, published_date });
+  const { error } = editingId
+    ? await db.from('posts').update({ type, content, published_date }).eq('id', editingId)
+    : await db.from('posts').insert({ type, content, published_date });
   if (error) {
     err.textContent = '오류가 발생했습니다: ' + error.message;
     err.classList.add('show');
     return;
   }
-  suc.textContent = `${published_date} 날짜로 글이 올라갔습니다!`;
+  suc.textContent = editingId ? `${published_date} 글이 수정되었습니다!` : `${published_date} 날짜로 글이 올라갔습니다!`;
   suc.classList.add('show');
+  cancelEdit();
+  loadAdminPosts();
+}
+
+// ── ADMIN: 올린 글 수정/삭제
+let editingId = null;
+let adminPostMap = {};
+
+async function loadAdminPosts() {
+  const box = document.getElementById('adminPostList');
+  const { data, error } = await db.from('posts').select('*').order('published_date', { ascending: false }).limit(60);
+  if (error) { box.innerHTML = '<div class="form-error show">불러오기 오류: ' + error.message + '</div>'; return; }
+  if (!data || data.length === 0) { box.innerHTML = '<div style="font-size:13px;color:var(--ink-3);padding:20px 0">올린 글이 없습니다.</div>'; return; }
+  adminPostMap = {};
+  data.forEach(p => adminPostMap[p.id] = p);
+  box.innerHTML = `
+    <table class="subscriber-table">
+      <thead><tr><th>날짜</th><th>구분</th><th>첫 줄</th><th></th></tr></thead>
+      <tbody>
+        ${data.map(p => `
+          <tr>
+            <td>${(p.published_date || p.created_at || '').slice(0, 10)}</td>
+            <td>${p.type === 'jongmok' ? '끄작임 디테일' : '끄작임'}</td>
+            <td style="max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${(p.content || '').replace(/<[^>]*>/g, '').slice(0, 40)}</td>
+            <td style="white-space:nowrap">
+              <button class="toggle-btn" onclick="startEdit('${p.id}')">수정</button>
+              <button class="toggle-btn" style="color:var(--red)" onclick="deletePost('${p.id}')">삭제</button>
+            </td>
+          </tr>`).join('')}
+      </tbody>
+    </table>`;
+}
+
+function startEdit(id) {
+  const p = adminPostMap[id];
+  if (!p) return;
+  editingId = id;
+  document.getElementById('adminContent').value = p.content || '';
+  document.getElementById('adminDate').value = (p.published_date || '').slice(0, 10);
+  const radio = document.querySelector(`input[name="postType"][value="${p.type}"]`);
+  if (radio) radio.checked = true;
+  document.getElementById('postBtn').textContent = '수정 저장';
+  document.getElementById('cancelEditBtn').style.display = 'inline-block';
+  document.getElementById('adminContent').scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+function cancelEdit() {
+  editingId = null;
   document.getElementById('adminContent').value = '';
   document.getElementById('adminDate').value = '';
+  document.getElementById('postBtn').textContent = '올리기';
+  document.getElementById('cancelEditBtn').style.display = 'none';
+}
+
+async function deletePost(id) {
+  const p = adminPostMap[id];
+  const label = p ? `${(p.published_date || '').slice(0, 10)} ${p.type === 'jongmok' ? '끄작임 디테일' : '끄작임'}` : '이 글';
+  if (!confirm(`${label} 글을 삭제할까요?\n삭제하면 되돌릴 수 없습니다.`)) return;
+  const { error } = await db.from('posts').delete().eq('id', id);
+  if (error) { alert('삭제 오류: ' + error.message); return; }
+  if (editingId === id) cancelEdit();
+  loadAdminPosts();
 }
 
 // ── ADMIN: SUBSCRIBERS
 async function loadSubscribers() {
+  loadAdminPosts();
   const { data } = await db.from('profiles').select('*').order('created_at', { ascending: false });
   const container = document.getElementById('subscriberList');
   if (!data || data.length === 0) {
