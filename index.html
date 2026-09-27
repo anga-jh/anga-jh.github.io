@@ -375,7 +375,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--paper);color:var(--i
     </div>
 
     <div class="tab-row">
-      <div class="tab active" id="tab-kkjagim" onclick="switchTab('kkjagim')">끄작임</div>
+      <div class="tab active" id="tab-kkjagim" onclick="switchTab('i+jagim')">끄작임</div>
       <div class="tab" id="tab-jongmok" onclick="switchTabJongmok()">끄작임 디테일</div>
     </div>
 
@@ -407,6 +407,10 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--paper);color:var(--i
       <div class="radio-group">
         <label class="radio-item"><input type="radio" name="postType" value="kkjagim" checked> 끄작임</label>
         <label class="radio-item"><input type="radio" name="postType" value="jongmok"> 끄작임 디테일</label>
+      </div>
+      <div class="form-group">
+        <label class="form-label">날짜 <span style="font-size:11px;color:var(--ink-3);font-weight:300">(비워두면 오늘 날짜)</span></label>
+        <input class="form-input" id="adminDate" type="date" style="max-width:200px">
       </div>
       <div class="form-group">
         <label class="form-label">내용</label>
@@ -712,15 +716,18 @@ async function handlePost() {
   }
 
   const today = new Date().toISOString().slice(0, 10);
-  const { error } = await db.from('posts').insert({ type, content, published_date: today });
+  const dateInput = document.getElementById('adminDate').value;
+  const published_date = dateInput || today;
+  const { error } = await db.from('posts').insert({ type, content, published_date });
   if (error) {
     err.textContent = '오류가 발생했습니다: ' + error.message;
     err.classList.add('show');
     return;
   }
-  suc.textContent = '글이 올라갔습니다!';
+  suc.textContent = `${published_date} 날짜로 글이 올라갔습니다!`;
   suc.classList.add('show');
   document.getElementById('adminContent').value = '';
+  document.getElementById('adminDate').value = '';
 }
 
 // ── ADMIN: SUBSCRIBERS
