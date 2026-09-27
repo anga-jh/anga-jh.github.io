@@ -315,6 +315,10 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--paper);color:var(--i
       <input class="form-input" id="signupPhone" type="tel" placeholder="010-0000-0000">
     </div>
     <div class="form-group">
+      <label class="form-label">추천인 전화번호 <span style="color:var(--ink-3);font-weight:400">(선택 · 소개받으셨다면 입력하세요, 첫 결제 15,000원 할인)</span></label>
+      <input class="form-input" id="signupReferrer" type="tel" placeholder="010-0000-0000">
+    </div>
+    <div class="form-group">
       <label class="form-label">이메일</label>
       <input class="form-input" id="signupEmail" type="email" placeholder="example@email.com">
     </div>
@@ -368,6 +372,15 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--paper);color:var(--i
       </div>
       <span class="member-name-tag" id="memberNameTag"></span>
     </div>
+
+    <!-- 마이페이지: 추천번호 / 쿠폰 / 결제 -->
+    <details class="post-card post-fold" id="myPage" style="margin-bottom:24px">
+      <summary class="post-card-header">
+        <span class="post-card-date">마이페이지 <span id="myPageSummary" style="font-weight:400;color:var(--ink-3);font-size:12px;margin-left:8px"></span></span>
+        <span class="fold-arrow">▾</span>
+      </summary>
+      <div class="post-card-body" id="myPageBody" style="padding:20px"><div class="loading"><div class="spinner"></div>불러오는 중...</div></div>
+    </details>
 
     <!-- 매일의 끄작임: 오늘 글 상단 표시 -->
     <div id="todaySectionWrap" style="display:none">
@@ -428,6 +441,18 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--paper);color:var(--i
       <div class="form-success" id="postSuccess"></div>
       <button class="btn btn-primary" id="postBtn" onclick="handlePost()">올리기</button>
       <button class="btn btn-ghost" id="cancelEditBtn" style="display:none;margin-left:8px" onclick="cancelEdit()">수정 취소</button>
+    </div>
+
+    <div class="admin-section">
+      <div class="admin-section-title">입금 확인 대기</div>
+      <div id="adminPaymentList"><div class="loading"><div class="spinner"></div>불러오는 중...</div></div>
+    </div>
+
+    <div class="admin-section">
+      <div class="admin-section-title">입금 계좌 안내 (로그인한 회원에게만 보임)</div>
+      <input class="form-input" id="adminBankInfo" type="text" placeholder="예) 국민은행 000000-00-000000 예금주 홍길동">
+      <div class="form-success" id="bankSaveMsg"></div>
+      <button class="btn btn-ghost" style="margin-top:8px" onclick="saveBankInfo()">계좌 저장</button>
     </div>
 
     <div class="admin-section">
@@ -531,7 +556,22 @@ async function handleSignup() {
     return;
   }
 
-  const { data, error } = await db.auth.signUp({ email, password, options: { data: { name, phone, plan } } });
+  const referrer = document.getElementById('signupReferrer').value.trim();
+  if (referrer) {
+    if (referrer.replace(/\D/g, '') === phone.replace(/\D/g, '')) {
+      err.textContent = '본인 번호는 추천인으로 입력할 수 없습니다.';
+      err.classList.add('show');
+      return;
+    }
+    const { data: ok } = await db.rpc('check_referrer', { p_phone: referrer });
+    if (!ok) {
+      err.textContent = '등록된 회원 번호가 아닙니다. 추천인 전화번호를 다시 확인해 주세요.';
+      err.classList.add('show');
+      return;
+    }
+  }
+
+  const { data, error } = await db.auth.signUp({ email, password, options: { data: { name, phone, plan, referrer } } });
   if (error) {
     err.textContent = error.message === 'User already registered' ? '이미 가입된 이메일입니다.' : error.message;
     err.classList.add('show');
@@ -545,6 +585,7 @@ async function handleSignup() {
   suc.classList.add('show');
   document.getElementById('signupName').value = '';
   document.getElementById('signupPhone').value = '';
+  document.getElementById('signupReferrer').value = '';
   document.getElementById('signupEmail').value = '';
   document.getElementById('signupPassword').value = '';
   document.getElementById('signupPlan').value = '';
@@ -633,6 +674,7 @@ function renderPosts(posts, containerId, type) {
 }
 
 async function loadPosts() {
+  loadMyPage();
   if (!currentProfile) return;
   const canSeeKkjagim = currentProfile.active && ['kkjagim', 'jongmok', 'package'].includes(currentProfile.plan);
   const canSeeJongmok = currentProfile.active && ['jongmok', 'package'].includes(currentProfile.plan);
@@ -815,17 +857,28 @@ async function deletePost(id) {
 // ── ADMIN: SUBSCRIBERS
 async function loadSubscribers() {
   loadAdminPosts();
+  loadAdminPayments();
   const { data } = await db.from('profiles').select('*').order('created_at', { ascending: false });
   const container = document.getElementById('subscriberList');
   if (!data || data.length === 0) {
     container.innerHTML = '<div style="font-size:13px;color:var(--ink-3);padding:20px 0">구독자가 없습니다.</div>';
     return;
   }
+  const { data: allCoupons } = await db.from('coupons').select('owner_id,used_at,available_from,expires_at');
+  const nameById = {};
+  data.forEach(s => nameById[s.id] = s.name || s.phone || '-');
+  const todayK = kstToday();
+  const couponInfo = id => {
+    const mine = (allCoupons || []).filter(c => c.owner_id === id);
+    if (!mine.length) return '-';
+    const left = mine.filter(c => !c.used_at && c.expires_at >= todayK).length;
+    return `${left}장 남음 / 총 ${mine.length}장`;
+  };
   container.innerHTML = `
     <table class="subscriber-table">
       <thead>
         <tr>
-          <th>이름</th><th>전화번호</th><th>플랜</th><th>상태</th><th>가입일</th><th></th>
+          <th>이름</th><th>전화번호</th><th>플랜</th><th>상태</th><th>추천인</th><th>쿠폰</th><th>가입일</th><th></th>
         </tr>
       </thead>
       <tbody>
@@ -835,6 +888,8 @@ async function loadSubscribers() {
             <td>${s.phone || '-'}</td>
             <td class="plan-cell">${planNames[s.plan] || s.plan}</td>
             <td><span class="status-dot ${s.active ? 'status-active' : 'status-inactive'}"></span>${s.active ? '활성' : '대기'}</td>
+            <td>${s.referrer_id ? (nameById[s.referrer_id] || '-') : '-'}</td>
+            <td>${couponInfo(s.id)}</td>
             <td>${s.created_at ? s.created_at.slice(0,10) : '-'}</td>
             <td><button class="toggle-btn" onclick="toggleActive('${s.id}', ${s.active})">${s.active ? '비활성화' : '활성화'}</button></td>
           </tr>
@@ -847,6 +902,201 @@ async function loadSubscribers() {
 async function toggleActive(id, current) {
   await db.from('profiles').update({ active: !current }).eq('id', id);
   loadSubscribers();
+}
+
+// ══ 마이페이지 · 추천 · 쿠폰 · 결제 ══
+const DISCOUNT_AMOUNT = 15000;  // 할인 금액 (SQL의 c_disc와 같게 유지)
+const planPrice = { kkjagim: 150000, jongmok: 300000, package: 400000 };
+const payStatus = { pending: '입금 확인 대기', confirmed: '결제 완료' };
+function won(n) { return Number(n || 0).toLocaleString('ko-KR') + '원'; }
+function kstToday() { return new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10); }
+function kstDate(ts) { return new Date(new Date(ts).getTime() + 9 * 3600e3).toISOString().slice(0, 10); }
+function fmtPhone(p) { const d = (p || '').replace(/\D/g, ''); return d.length === 11 ? `${d.slice(0,3)}-${d.slice(3,7)}-${d.slice(7)}` : (p || '-'); }
+let myPayState = {};
+
+async function loadMyPage() {
+  if (!currentProfile) return;
+  const body = document.getElementById('myPageBody');
+  const [cRes, pRes, sRes] = await Promise.all([
+    db.from('coupons').select('*').eq('owner_id', currentUser.id).order('expires_at'),
+    db.from('payments').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false }).limit(24),
+    db.from('site_settings').select('value').eq('key', 'bank_info').maybeSingle()
+  ]);
+  const coupons = cRes.data || [], pays = pRes.data || [];
+  const bank = (sRes.data && sRes.data.value) || '입금 계좌는 관리자에게 문의해 주세요.';
+  const today = kstToday(), month = today.slice(0, 7);
+  const usable = coupons.filter(c => !c.used_at && c.available_from <= today && c.expires_at >= today);
+  const waiting = coupons.filter(c => !c.used_at && c.available_from > today);
+  const usedThisMonth = coupons.some(c => c.used_at && kstDate(c.used_at).slice(0, 7) === month);
+  const firstDiscount = !pays.some(p => p.status === 'confirmed') && !!currentProfile.referrer_id;
+  const pending = pays.find(p => p.status === 'pending');
+  myPayState = { firstDiscount, canCoupon: usable.length > 0 && !usedThisMonth };
+  if (!currentProfile.active || pending) document.getElementById('myPage').open = true;
+
+  document.getElementById('myPageSummary').textContent =
+    `쿠폰 ${usable.length}장${pending ? ' · 입금 확인 대기중' : ''}`;
+
+  const box = 'border:1px solid var(--rule);border-radius:2px;padding:16px;margin-bottom:16px;background:var(--white)';
+  const h = 'font-size:13px;font-weight:600;margin-bottom:10px';
+  const s = 'font-size:13px;color:var(--ink-2);line-height:1.8';
+
+  let payHtml;
+  if (pending) {
+    payHtml = `
+      <div style="${s}">
+        <b>${planNames[pending.plan] || pending.plan}</b> · 입금하실 금액 <b style="color:var(--green)">${won(pending.amount)}</b>
+        ${pending.discount ? `<span style="color:var(--ink-3)">(${won(pending.base_amount)} − ${won(pending.discount)} ${pending.discount_type === 'first' ? '추천가입 할인' : '쿠폰'})</span>` : ''}<br>
+        입금 계좌: <b>${bank}</b><br>
+        입금자명: ${pending.depositor || currentProfile.name || '-'}<br>
+        <span style="color:var(--ink-3)">입금이 확인되면 바로 구독이 시작됩니다.</span>
+      </div>
+      <button class="btn btn-ghost btn-sm" style="margin-top:10px" onclick="cancelMyPayment('${pending.id}')">신청 취소</button>`;
+  } else {
+    let discountRow = '';
+    if (firstDiscount) discountRow = `<div style="${s}">🎁 추천 가입 첫 결제 할인 <b>−${won(DISCOUNT_AMOUNT)}</b> 자동 적용</div>`;
+    else if (myPayState.canCoupon) discountRow = `<label style="${s};cursor:pointer"><input type="checkbox" id="payUseCoupon" onchange="updatePayTotal()"> 쿠폰 1장 사용 (−${won(DISCOUNT_AMOUNT)})</label>`;
+    else if (usable.length && usedThisMonth) discountRow = `<div style="${s};color:var(--ink-3)">이번 달은 쿠폰을 이미 사용하셨습니다. (한 달 1장)</div>`;
+    payHtml = `
+      <div class="form-group">
+        <label class="form-label">플랜</label>
+        <select class="plan-select" id="payPlan" onchange="updatePayTotal()">
+          ${Object.keys(planPrice).map(k => `<option value="${k}" ${k === currentProfile.plan ? 'selected' : ''}>${planNames[k]} — 월 ${won(planPrice[k])}</option>`).join('')}
+        </select>
+      </div>
+      ${discountRow}
+      <div class="form-group" style="margin-top:12px">
+        <label class="form-label">결제 방법</label>
+        <label class="radio-item"><input type="radio" name="payMethod" value="bank" checked> 계좌이체</label>
+        <label class="radio-item" style="color:var(--ink-4)"><input type="radio" name="payMethod" value="card" disabled> 카드결제 (준비중)</label>
+        <label class="radio-item" style="color:var(--ink-4)"><input type="radio" name="payMethod" value="card_auto" disabled> 카드 자동결제 (준비중)</label>
+      </div>
+      <div class="form-group">
+        <label class="form-label">입금자명</label>
+        <input class="form-input" id="payDepositor" type="text" value="${currentProfile.name || ''}">
+      </div>
+      <div style="font-size:15px;margin:12px 0">결제 금액 <b id="payTotal" style="color:var(--green)"></b></div>
+      <div class="form-error" id="payError"></div>
+      <button class="btn btn-primary" onclick="submitPayment()">결제 신청하기</button>`;
+  }
+
+  const couponList = coupons.filter(c => !c.used_at && c.expires_at >= today).map(c =>
+    `<div style="${s}">• ${won(c.amount)} 할인쿠폰 — ${c.available_from > today ? `${c.available_from}부터 사용` : '사용 가능'} · ${c.expires_at}까지</div>`).join('');
+
+  body.innerHTML = `
+    <div style="${box}">
+      <div style="${h}">내 구독</div>
+      <div style="${s}">${planNames[currentProfile.plan] || '-'} · ${currentProfile.active ? '<span style="color:var(--green)">이용중</span>' : '결제 대기'}</div>
+    </div>
+    <div style="${box}">
+      <div style="${h}">결제하기</div>
+      ${payHtml}
+    </div>
+    <div style="${box}">
+      <div style="${h}">내 할인쿠폰 · 사용 가능 ${usable.length}장${waiting.length ? ` / 대기 ${waiting.length}장` : ''}</div>
+      ${couponList || `<div style="${s};color:var(--ink-3)">보유한 쿠폰이 없습니다.</div>`}
+    </div>
+    <div style="${box}">
+      <div style="${h}">지인 소개하고 쿠폰 받기</div>
+      <div style="${s}">
+        내 추천 번호: <b>${fmtPhone(currentProfile.phone)}</b><br>
+        소개하실 분이 가입할 때 이 번호를 <b>추천인</b>으로 입력하면,<br>
+        · 소개받은 분은 첫 결제 ${won(DISCOUNT_AMOUNT)} 할인<br>
+        · 그분이 첫 결제를 마치면, 회원님께 다음 달부터 쓸 수 있는 ${won(DISCOUNT_AMOUNT)} 쿠폰 1장 지급<br>
+        <span style="color:var(--ink-3)">쿠폰은 발급 후 1년간, 한 달에 1장씩 사용할 수 있습니다.</span>
+      </div>
+    </div>
+    ${pays.length ? `
+    <div style="${box}">
+      <div style="${h}">결제 내역</div>
+      ${pays.map(p => `<div style="${s}">${kstDate(p.created_at)} · ${planNames[p.plan] || p.plan} · ${won(p.amount)} · ${payStatus[p.status] || p.status}</div>`).join('')}
+    </div>` : ''}`;
+  updatePayTotal();
+}
+
+function updatePayTotal() {
+  const el = document.getElementById('payTotal');
+  if (!el) return;
+  const plan = document.getElementById('payPlan').value;
+  const cb = document.getElementById('payUseCoupon');
+  const disc = (myPayState.firstDiscount || (cb && cb.checked)) ? DISCOUNT_AMOUNT : 0;
+  el.textContent = won(planPrice[plan] - disc) + (disc ? ` (할인 −${won(disc)})` : '');
+}
+
+async function submitPayment() {
+  const err = document.getElementById('payError');
+  err.classList.remove('show');
+  const cb = document.getElementById('payUseCoupon');
+  const { error } = await db.rpc('request_payment', {
+    p_plan: document.getElementById('payPlan').value,
+    p_method: document.querySelector('input[name="payMethod"]:checked').value,
+    p_use_coupon: !!(cb && cb.checked),
+    p_depositor: document.getElementById('payDepositor').value
+  });
+  if (error) { err.textContent = error.message; err.classList.add('show'); return; }
+  document.getElementById('myPage').open = true;
+  loadMyPage();
+}
+
+async function cancelMyPayment(id) {
+  if (!confirm('결제 신청을 취소할까요?')) return;
+  await db.from('payments').delete().eq('id', id);
+  loadMyPage();
+}
+
+// ── ADMIN: 입금 확인 / 계좌 설정
+async function loadAdminPayments() {
+  const box = document.getElementById('adminPaymentList');
+  const [pRes, uRes, sRes] = await Promise.all([
+    db.from('payments').select('*').eq('status', 'pending').order('created_at'),
+    db.from('profiles').select('id,name,phone'),
+    db.from('site_settings').select('value').eq('key', 'bank_info').maybeSingle()
+  ]);
+  if (sRes.data) document.getElementById('adminBankInfo').value = sRes.data.value || '';
+  if (pRes.error) { box.innerHTML = '<div class="form-error show">불러오기 오류: ' + pRes.error.message + '</div>'; return; }
+  const users = {};
+  (uRes.data || []).forEach(u => users[u.id] = u);
+  const list = pRes.data || [];
+  if (!list.length) { box.innerHTML = '<div style="font-size:13px;color:var(--ink-3);padding:20px 0">입금 확인 대기중인 신청이 없습니다.</div>'; return; }
+  box.innerHTML = `
+    <table class="subscriber-table">
+      <thead><tr><th>신청일</th><th>이름</th><th>입금자명</th><th>플랜</th><th>금액</th><th>할인</th><th></th></tr></thead>
+      <tbody>
+        ${list.map(p => `
+          <tr>
+            <td>${kstDate(p.created_at)}</td>
+            <td>${(users[p.user_id] && users[p.user_id].name) || '-'}</td>
+            <td>${p.depositor || '-'}</td>
+            <td>${planNames[p.plan] || p.plan}</td>
+            <td><b>${won(p.amount)}</b></td>
+            <td>${p.discount ? (p.discount_type === 'first' ? '추천가입' : '쿠폰') + ' −' + won(p.discount) : '-'}</td>
+            <td style="white-space:nowrap">
+              <button class="toggle-btn" onclick="confirmPay('${p.id}')">입금확인</button>
+              <button class="toggle-btn" style="color:var(--red)" onclick="rejectPay('${p.id}')">취소</button>
+            </td>
+          </tr>`).join('')}
+      </tbody>
+    </table>`;
+}
+
+async function confirmPay(id) {
+  if (!confirm('입금 확인 처리할까요?\n구독이 활성화되고, 추천인이 있으면 쿠폰이 지급됩니다.')) return;
+  const { error } = await db.rpc('confirm_payment', { p_id: id });
+  if (error) { alert('오류: ' + error.message); return; }
+  loadSubscribers();
+}
+
+async function rejectPay(id) {
+  if (!confirm('이 결제 신청을 취소(삭제)할까요?')) return;
+  await db.from('payments').delete().eq('id', id);
+  loadAdminPayments();
+}
+
+async function saveBankInfo() {
+  const value = document.getElementById('adminBankInfo').value.trim();
+  const { error } = await db.from('site_settings').upsert({ key: 'bank_info', value });
+  const msg = document.getElementById('bankSaveMsg');
+  msg.textContent = error ? '저장 오류: ' + error.message : '저장되었습니다.';
+  msg.classList.add('show');
 }
 
 // ── INIT
