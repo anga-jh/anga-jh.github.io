@@ -760,17 +760,25 @@ async function loadAdminPosts() {
       <thead><tr><th>날짜</th><th>구분</th><th>첫 줄</th><th></th></tr></thead>
       <tbody>
         ${data.map(p => `
-          <tr>
+          <tr style="cursor:pointer" onclick="toggleAdminRead('${p.id}')" title="클릭하면 글 전체가 펼쳐집니다">
             <td>${(p.published_date || p.created_at || '').slice(0, 10)}</td>
             <td>${p.type === 'jongmok' ? '끄작임 디테일' : '끄작임'}</td>
             <td style="max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${(p.content || '').replace(/<[^>]*>/g, '').slice(0, 40)}</td>
-            <td style="white-space:nowrap">
+            <td style="white-space:nowrap" onclick="event.stopPropagation()">
               <button class="toggle-btn" onclick="startEdit('${p.id}')">수정</button>
               <button class="toggle-btn" style="color:var(--red)" onclick="deletePost('${p.id}')">삭제</button>
             </td>
+          </tr>
+          <tr id="read-${p.id}" style="display:none">
+            <td colspan="4" style="background:var(--white);padding:20px;white-space:pre-wrap;line-height:1.8;font-size:14px">${p.content || ''}</td>
           </tr>`).join('')}
       </tbody>
     </table>`;
+}
+
+function toggleAdminRead(id) {
+  const row = document.getElementById('read-' + id);
+  if (row) row.style.display = row.style.display === 'none' ? 'table-row' : 'none';
 }
 
 function startEdit(id) {
